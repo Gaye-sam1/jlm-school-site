@@ -461,12 +461,12 @@ export default function JLMSite() {
 
 {/* ── Navbar ── */}
 <nav className={`navbar${solid ? " solid" : ""}`} style={{ padding:"0 5vw" }}>
-  <div style={{ maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:70 }}>
+  <div style={{ maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:80 }}>
     
     {/* Logo + School Name */}
     <div style={{ display:"flex",alignItems:"center",gap:15,cursor:"pointer" }} onClick={() => scrollTo("#home")}>
     <div/>
-      <div style={{ width:70,height:70,borderRadius:"80%",background:"linear-gradient(135deg,var(--gold),#a88020)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden" }}>
+      <div style={{ width:65,height:65,borderRadius:"80%",background:"linear-gradient(135deg,var(--gold),#a88020)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden" }}>
         <img src="\logo/logo.png" alt="School Logo" 
           style={{ width:"200%", height:"100%", objectFit:"cover", borderRadius:"90%" }}/>
       </div>

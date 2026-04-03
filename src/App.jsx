@@ -1,3 +1,5 @@
+import { FaWhatsapp } from "react-icons/fa";
+import emailjs from "@emailjs/browser";
 import { useState, useEffect, useRef } from "react";
 import {
   Menu, X, BookOpen, Users, Award, Globe,
@@ -245,6 +247,58 @@ const Styles = () => (
       .footer-grid { grid-template-columns:1fr 1fr!important; }
       .stats-grid { grid-template-columns:1fr 1fr!important; }
     }
+    
+    /* ── Mobile Fixes ── */
+@media (max-width:768px) {
+  .hero {
+    min-height:100svh;
+    padding-bottom:40px;
+  }
+
+  .hero-grid {
+    grid-template-columns:1fr!important;
+    gap:28px!important;
+  }
+
+  .about-grid {
+    grid-template-columns:1fr!important;
+    gap:32px!important;
+  }
+
+  .contact-grid {
+    grid-template-columns:1fr!important;
+    gap:24px!important;
+  }
+
+  .footer-grid {
+    grid-template-columns:1fr 1fr!important;
+    gap:24px!important;
+  }
+
+  /* Fix gallery grid on mobile */
+  #gallery .gallery-mobile {
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media (max-width:480px) {
+  .footer-grid {
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media (max-width:640px) {
+  .gallery-mobile {
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media (min-width:641px) and (max-width:900px) {
+  .gallery-mobile {
+    grid-template-columns:1fr 1fr!important;
+  }
+}
+
   `}</style>
 );
 
@@ -275,18 +329,22 @@ const VALUES = [
 ];
 
 const NEWS_ITEMS = [
-  { tag:"Achievement", gold:false, date:"March 2026", title:"JLM Senior Places 1st in Montserrado County Science Competition",           excerpt:"Grade 11 student Emmanuel Jallah swept all categories, earning a berth in the national science exhibition." },
-  { tag:"Event",       gold:true,  date:"March 2026", title:"Junior High Cultural Day Celebrates Liberia's Vibrant Heritage",            excerpt:"Grades 7–9 students dazzled staff and parents with traditional dance, drama, and storytelling from across Liberia." },
+  { tag:"Achievement", gold:false, date:"March 2026", title:"JLM Senior Places 1st in Montserrado County Science Competition",           excerpt:"Class 11 student Emmanuel Jallah swept all categories, earning a berth in the national science exhibition." },
+  { tag:"Event",       gold:true,  date:"March 2026", title:"Junior High Cultural Day Celebrates Liberia's Vibrant Heritage",            excerpt:"Class 7–9 students dazzled staff and parents with traditional dance, drama, and storytelling from across Liberia." },
   { tag:"Scholarship", gold:false, date:"Feb 2026",   title:"Class of 2025 Alumna Awarded Full University Scholarship",                   excerpt:"Comfort Kollie has received a fully funded scholarship to study Medicine — a proud moment for the entire JLM family." },
 ];
 
 const GALLERY_ITEMS = [
-  { l:"Graduation Ceremony 2025",   bg:"linear-gradient(135deg,#0c1f5c,#1a318a)", h:260 },
-  { l:"Science Fair — Senior High", bg:"linear-gradient(135deg,#1a318a,#2748b8)", h:140 },
-  { l:"Cultural Day — Junior High", bg:"linear-gradient(135deg,#7a5c00,#c8a02a)", h:140 },
-  { l:"Football Championship",      bg:"linear-gradient(135deg,#0c1f5c,#2748b8)", h:200 },
-  { l:"Chapel Service",             bg:"linear-gradient(135deg,#1a318a,#0c1f5c)", h:200 },
-  { l:"Library & Study Hall",       bg:"linear-gradient(135deg,#2748b8,#1a318a)", h:140 },
+  { l:"Graduation Ceremony 2025",   img:"/images/graduation.jpg",   h:260 },
+  { l:"Science Fair — Senior High", img:"/images/science-fair.jpg", h:190 },
+  { l:"Cultural Day — Junior High", img:"/images/cultural-day.jpg", h:190 },
+  { l:"Football Championship",      img:"/images/football.jpg",     h:200 },
+  { l:"Chapel Service",             img:"/images/chapel.jpg",       h:200 },
+  { l:"Library & Study Hall",       img:"/images/library.jpg",      h:190 },
+  { l:"Senior & Junior High School Building",  img:"/images/school-building.jpg", h:150 },
+  { l:"Elementary School Building",   img:"/images/elementary-building.jpg", h:150 },
+  { l:"School Building",            img:"/images/students.jpg", h:120 },
+
 ];
 
 /* ── COUNTER ── */
@@ -320,9 +378,47 @@ function StatCell({ n, l, go }) {
 
 /* ── MAIN ── */
 export default function JLMSite() {
+
+  const [status, setStatus] = useState("");
+
+  const sendEmail = (e) => {
+    e.preventDefault();
+
+    setStatus("loading");
+
+    // 1. Send to school inbox
+    const schoolInbox = emailjs.sendForm(
+      "service_4mkotvj",
+      "template_vazlyma", 
+      e.target, 
+      "I7qLc7gVyKx1hh22j"
+    ); 
+
+    // 2. Auto reply to sender
+    const autoReply = emailjs.sendForm(
+      "service_4mkotvj",
+      "template_t662nee",
+      e.target,
+      "I7qLc7gVyKx1hh22j"
+    );
+
+    // Handle both promises together
+    Promise.all([schoolInbox, autoReply])
+      .then(() => {
+        setStatus("success");
+        e.target.reset();
+      }) 
+      .catch((error) => { 
+        console.error(error);
+        setStatus("error");
+      });    
+  };
+    
+
   const [solid,     setSolid]     = useState(false);
   const [menu,      setMenu]      = useState(false);
   const [statsGo,   setStatsGo]   = useState(false);
+  const [lightbox, setLightbox] = useState(null); // null = closed
   const statsRef = useRef(null);
 
   useEffect(() => { document.body.style.overflow = menu ? "hidden" : ""; }, [menu]);
@@ -358,32 +454,52 @@ export default function JLMSite() {
       <div className={`mob-overlay lg-hide ${menu ? "" : "off"}`}>
         <button onClick={() => setMenu(false)} style={{ position:"absolute",top:22,right:22,background:"none",border:"none",color:"#fff",cursor:"pointer" }}><X size={28}/></button>
         {NAV_ITEMS.map(l => <a key={l.l} className="mob-a" href={l.h} onClick={e => { e.preventDefault(); scrollTo(l.h); }}>{l.l}</a>)}
-        <a className="btn-gold" href="#contact" onClick={e => { e.preventDefault(); scrollTo("#contact"); }} style={{ marginTop:8 }}>Apply Now <ArrowRight size={14}/></a>
+        <a className="btn-gold" href="/admissions" style={{ marginTop:8 }}>
+           Apply Now <ArrowRight size={14}/>
+        </a>
       </div>
 
-      {/* ── Navbar ── */}
-      <nav className={`navbar${solid ? " solid" : ""}`} style={{ padding:"0 5vw" }}>
-        <div style={{ maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:70 }}>
-          <div style={{ display:"flex",alignItems:"center",gap:12,cursor:"pointer" }} onClick={() => scrollTo("#home")}>
-            <div style={{ width:42,height:42,borderRadius:"50%",background:"linear-gradient(135deg,var(--gold),#a88020)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
-              <GraduationCap size={20} color="#0c1f5c"/>
-            </div>
-            <div>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:".88rem",color:"#fff",lineHeight:1.15 }}>JLM Memorial</div>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".58rem",letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.42)" }}>United Methodist High School · Liberia</div>
-            </div>
-          </div>
-
-          <div className="sm-hide" style={{ display:"flex",alignItems:"center",gap:30 }}>
-            {NAV_ITEMS.map(l => <a key={l.l} className="nav-a" href={l.h} onClick={e => { e.preventDefault(); scrollTo(l.h); }}>{l.l}</a>)}
-          </div>
-
-          <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-            <a className="btn-gold sm-hide" href="#contact" onClick={e => { e.preventDefault(); scrollTo("#contact"); }} style={{ padding:"9px 20px",fontSize:".72rem" }}>Apply Now <ArrowRight size={13}/></a>
-            <button className="lg-hide" onClick={() => setMenu(true)} style={{ background:"none",border:"none",color:"#fff",cursor:"pointer",padding:4 }}><Menu size={26}/></button>
-          </div>
+{/* ── Navbar ── */}
+<nav className={`navbar${solid ? " solid" : ""}`} style={{ padding:"0 5vw" }}>
+  <div style={{ maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:70 }}>
+    
+    {/* Logo + School Name */}
+    <div style={{ display:"flex",alignItems:"center",gap:15,cursor:"pointer" }} onClick={() => scrollTo("#home")}>
+    <div/>
+      <div style={{ width:70,height:70,borderRadius:"80%",background:"linear-gradient(135deg,var(--gold),#a88020)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden" }}>
+        <img src="\logo/logo.png" alt="School Logo" 
+          style={{ width:"200%", height:"100%", objectFit:"cover", borderRadius:"90%" }}/>
+      </div>
+      <div>
+        <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:".90rem",color:"#fff8f8fd",lineHeight:1.1 }}>
+          JLM Memorial
         </div>
-      </nav>
+        <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",letterSpacing:".145em",textTransform:"uppercase",color:"rgb(255, 255, 255)" }}>
+          United Methodist School
+        </div>
+      </div>
+    </div>
+
+    {/* Navigation Links */}
+    <div className="sm-hide" style={{ display:"flex",alignItems:"center",gap:30 }}>
+      {NAV_ITEMS.map(l => (
+        <a key={l.l} className="nav-a" href={l.h} onClick={e => { e.preventDefault(); scrollTo(l.h); }}>
+          {l.l}
+        </a>
+      ))}
+    </div>
+
+    {/* Buttons */}
+    <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+       <a className="btn-gold sm-hide" href="/admissions" style={{ padding:"9px 20px",fontSize:".72rem" }}>
+        Apply Now <ArrowRight size={13}/>
+      </a>
+      <button className="lg-hide" onClick={() => setMenu(true)} style={{ background:"none",border:"none",color:"#fff",cursor:"pointer",padding:4 }}>
+        <Menu size={26}/>
+      </button>
+    </div>
+  </div>
+</nav>
 
       {/* ── Hero ── */}
       <section id="home" className="hero">
@@ -392,22 +508,22 @@ export default function JLMSite() {
         <div style={{ position:"absolute",top:"-4%",right:"-2%",width:280,height:280,borderRadius:"50%",border:"1px solid rgba(200,160,42,.07)",pointerEvents:"none" }} />
         <div style={{ position:"absolute",bottom:"8%",left:"-8%",width:340,height:340,borderRadius:"50%",background:"radial-gradient(circle,rgba(39,72,184,.25),transparent 70%)",pointerEvents:"none" }} />
 
-        <div style={{ maxWidth:1200,margin:"0 auto",padding:"0 5vw",width:"100%",paddingTop:88 }}>
+        <div style={{ maxWidth:1200,margin:"0 auto",padding:"0 5vw",width:"100%",paddingTop:72 }}>
           <div className="hero-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:48,alignItems:"center" }}>
 
             {/* Left */}
             <div>
               <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(200,160,42,.12)",border:"1px solid rgba(200,160,42,.28)",borderRadius:100,padding:"5px 14px",marginBottom:22,animation:"fadeIn 1s ease both" }}>
                 <Star size={11} fill="var(--gold)" color="var(--gold)"/>
-                <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".66rem",fontWeight:700,letterSpacing:".16em",textTransform:"uppercase",color:"var(--gold-light)" }}>Founded 1946 · Monrovia, Liberia</span>
+                <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".66rem",fontWeight:700,letterSpacing:".16em",textTransform:"uppercase",color:"var(--gold-light)" }}>Founded 1946 · Montserrado, Liberia</span>
               </div>
 
               <h1 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"clamp(2.5rem,5.5vw,5rem)",lineHeight:1.04,color:"#fff",marginBottom:20,animation:"fadeUp 1s .2s ease both" }}>
-                John Lewis Morris<br/>Memorial <span className="shimmer-gold">UMC</span><br/>High School
+                John Lewis<br/> Morris Memorial <span className="shimmer-gold"><span></span><br/>United Methodist School</span><br/>
               </h1>
 
               <p style={{ fontFamily:"'Barlow',sans-serif",fontSize:"clamp(.92rem,1.5vw,1.08rem)",color:"rgba(255,255,255,.62)",lineHeight:1.78,maxWidth:450,marginBottom:34,fontStyle:"italic",animation:"fadeUp 1s .4s ease both" }}>
-                "Educating minds, shaping futures, building a stronger Liberia — one student at a time."
+                "Educating minds, shaping futures, building a stronger Liberia, one student at a time."
               </p>
 
               <div style={{ display:"flex",gap:14,flexWrap:"wrap",animation:"fadeUp 1s .55s ease both" }}>
@@ -426,34 +542,46 @@ export default function JLMSite() {
               <div style={{ position:"relative",width:340 }}>
                 <div style={{ background:"rgba(255,255,255,.06)",backdropFilter:"blur(18px)",border:"1px solid rgba(255,255,255,.12)",borderRadius:14,padding:"28px 24px",animation:"fadeUp 1s .5s ease both" }}>
 
-                  {/* Senior High — Blue & White */}
-                  <div style={{ background:"linear-gradient(90deg,var(--navy),var(--navy-mid))",borderRadius:8,padding:"12px 16px",marginBottom:12,border:"1px solid rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                  {/* Senior High — White & Blue */}
+                  <div style={{ background:"linear-gradient(90deg, white, white)",borderRadius:8,padding:"12px 16px",marginBottom:12,border:"1px solid rgba(128, 80, 9, 0.83)",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
                     <div>
-                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".58rem",fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.48)",marginBottom:2 }}>Senior High · Grades 10–12</div>
-                      <div style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:".95rem",color:"#fff" }}>Colors: Blue & White</div>
+                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".58rem",fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"rgb(4, 3, 83)",marginBottom:2 }}>Senior High · Grade 10 – 12</div>
+                      <div style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:".95rem",color:"#090868" }}>Colors: Blue & White</div>
                     </div>
                     <div style={{ display:"flex",gap:5 }}>
-                      <div style={{ width:13,height:13,borderRadius:"50%",background:"var(--navy-light)",border:"2px solid rgba(255,255,255,.3)" }}/>
-                      <div style={{ width:13,height:13,borderRadius:"50%",background:"#fff",border:"2px solid rgba(255,255,255,.5)" }}/>
+                      <div style={{ width:13,height:13,borderRadius:"50%",background:"var(--navy-light)",border:"2px solid rgb(255, 255, 255)" }}/>
+                      <div style={{ width:13,height:13,borderRadius:"50%",background:"#ffffff",border:"2px solid rgba(31, 2, 99, 0.79)" }}/>
                     </div>
                   </div>
 
                   {/* Junior High — Gold & Blue */}
-                  <div style={{ background:"linear-gradient(90deg,#7a5c00,#a88020)",borderRadius:8,padding:"12px 16px",marginBottom:20,border:"1px solid rgba(200,160,42,.25)",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                  <div style={{ background:"linear-gradient(90deg,var(--navy),var(--navy-mid))",borderRadius:8,padding:"12px 16px",marginBottom:20,border:"1px solid rgb(255, 255, 255)",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
                     <div>
-                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".58rem",fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.52)",marginBottom:2 }}>Junior High & Below · Grades 7–9</div>
+                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".58rem",fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(247, 243, 243, 0.97)",marginBottom:2 }}>Junior High & Below · Grade 7 – 9</div>
                       <div style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:".95rem",color:"#fff" }}>Colors: Gold & Blue</div>
                     </div>
                     <div style={{ display:"flex",gap:5 }}>
-                      <div style={{ width:13,height:13,borderRadius:"50%",background:"var(--gold-light)",border:"2px solid rgba(255,255,255,.4)" }}/>
+                      <div style={{ width:13,height:13,borderRadius:"50%",background:"var(--gold-light)",border:"2px solid rgba(247, 242, 242, 0.89)" }}/>
                       <div style={{ width:13,height:13,borderRadius:"50%",background:"var(--navy-light)",border:"2px solid rgba(255,255,255,.25)" }}/>
+                    </div>
+                  </div>
+
+                  {/* Elementary — Gold & Blue */}
+                  <div style={{ background:"linear-gradient(90deg,#7a5c00,#a88020)",borderRadius:8,padding:"12px 16px",marginBottom:20,border:"1px solid rgb(19, 3, 90)",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                    <div>
+                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".58rem",fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255, 255, 255, 0.96)",marginBottom:2 }}>Kindergarten & Elemen · K1 – Grade 6 </div>
+                      <div style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:".95rem",color:"#fff" }}>Colors: Gold & Blue</div>
+                    </div>
+                    <div style={{ display:"flex",gap:5 }}>
+                      <div style={{ width:13,height:13,borderRadius:"50%",background:"var(--gold-light)",border:"2px solid rgba(255, 255, 255, 0.77)" }}/>
+                      <div style={{ width:13,height:13,borderRadius:"50%",background:"var(--navy-light)",border:"2px solid rgba(255, 255, 255, 0.7)" }}/>
                     </div>
                   </div>
 
                   {[
                     { icon:Award,    t:"Top-ranked in Montserrado County" },
                     { icon:BookOpen, t:"WASSCE-certified curriculum" },
-                    { icon:Shield,   t:"United Methodist mission school" },
+                    { icon:Shield,   t:"United Methodist School" },
                     { icon:Globe,    t:"Alumni across 30+ countries" },
                   ].map(({ icon:Icon, t }, i) => (
                     <div key={i} style={{ display:"flex",alignItems:"center",gap:10,marginBottom:11 }}>
@@ -509,7 +637,7 @@ export default function JLMSite() {
                   <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"var(--gold)",marginTop:14 }}>— Proverbs 22:6</div>
                 </div>
                 <div style={{ marginTop:34,display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,position:"relative" }}>
-                  {[{l:"Founded",v:"1946"},{l:"Denomination",v:"UMC"},{l:"County",v:"Montserrado"},{l:"Grades",v:"7–12"}].map(({l,v}) => (
+                  {[{l:"Founded",v:"1946"},{l:"Denomination",v:"UMC"},{l:"County",v:"Montserrado"},{l:"Class",v:"KI–12"}].map(({l,v}) => (
                     <div key={l} style={{ background:"rgba(255,255,255,.07)",borderRadius:7,padding:"14px 12px" }}>
                       <div style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"1.1rem",color:"var(--gold)" }}>{v}</div>
                       <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".58rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"rgba(255,255,255,.42)",marginTop:2 }}>{l}</div>
@@ -522,10 +650,10 @@ export default function JLMSite() {
             {/* Text */}
             <div className="reveal d1">
               <div className="eyebrow" style={{ marginBottom:14 }}>Our Legacy</div>
-              <h2 className="sec-title" style={{ marginBottom:14 }}>A Pillar of Learning in Monrovia Since 1946</h2>
+              <h2 className="sec-title" style={{ marginBottom:14 }}>A Pillar of Learning in Montserrado Since 1946</h2>
               <div className="rule" style={{ marginBottom:24 }}/>
               <p style={{ lineHeight:1.88,color:"var(--muted)",marginBottom:16,fontSize:".92rem" }}>
-                Founded under the United Methodist Mission, John Lewis Morris Memorial High School has served Liberia for nearly eight decades — surviving civil war, economic hardship, and national transformation, never wavering in its commitment to excellence.
+                Founded under the United Methodist Church, John Lewis Morris Memorial High School has served Liberia for nearly eight decades, surviving civil war, economic hardship, and national transformation, never wavering in its commitment to excellence.
               </p>
               <p style={{ lineHeight:1.88,color:"var(--muted)",marginBottom:32,fontSize:".92rem" }}>
                 Our graduates lead in government, medicine, law, engineering, and business across Liberia and the world. Their success is our greatest testimony.
@@ -560,35 +688,35 @@ export default function JLMSite() {
         <div style={{ maxWidth:1200,margin:"0 auto" }}>
           <div style={{ textAlign:"center",marginBottom:50 }}>
             <div className="eyebrow reveal" style={{ justifyContent:"center",marginBottom:12 }}>Academic Programs</div>
-            <h2 className="sec-title reveal d1">Two Levels, One Mission</h2>
+            <h2 className="sec-title reveal d1">Three Levels, One Mission</h2>
             <p className="reveal d2" style={{ marginTop:12,color:"var(--muted)",fontSize:".9rem",maxWidth:500,margin:"12px auto 0" }}>
-              Each level carries its own identity and colors — united by a shared commitment to excellence.
+              Each level carries its own identity and colors; United by a shared commitment to excellence.
             </p>
           </div>
 
-          {/* ─ Senior High: Blue & White ─ */}
-          <div className="lvl-card reveal" style={{ background:"linear-gradient(145deg,var(--navy),var(--navy-mid))",marginBottom:20 }}>
+          {/* ─ Senior High: White & Blue ─ */}
+          <div className="lvl-card reveal" style={{ background:"linear-gradient(90deg, #dfddddb4, #dfddddb4)",marginBottom:20 }}>
             <div style={{ padding:"38px 40px" }}>
               <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:28 }}>
                 <div style={{ flex:1,minWidth:240 }}>
                   {/* Color chips */}
-                  <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.18)",borderRadius:100,padding:"4px 14px",marginBottom:18 }}>
+                  <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(48, 65, 221, 0.1)",border:"1px solid rgb(11, 1, 104)",borderRadius:100,padding:"4px 14px",marginBottom:18 }}>
                     <div style={{ display:"flex",gap:5 }}>
-                      <div style={{ width:11,height:11,borderRadius:"50%",background:"var(--navy-light)",border:"2px solid rgba(255,255,255,.4)" }}/>
-                      <div style={{ width:11,height:11,borderRadius:"50%",background:"#fff",border:"2px solid rgba(255,255,255,.6)" }}/>
+                      <div style={{ width:11,height:11,borderRadius:"50%",background:"var(--navy-light)",border:"2px solid rgba(11, 1, 104)" }}/>
+                      <div style={{ width:11,height:11,borderRadius:"50%",background:"#150766",border:"2px solid rgba(11, 1, 104)" }}/>
                     </div>
-                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".62rem",fontWeight:700,letterSpacing:".15em",textTransform:"uppercase",color:"rgba(255,255,255,.68)" }}>School Colors: Blue & White</span>
+                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".62rem",fontWeight:700,letterSpacing:".15em",textTransform:"uppercase",color:"rgba(11, 1, 104)" }}>Level Colors: White & Blue</span>
                   </div>
-                  <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"1.95rem",color:"#fff",marginBottom:8 }}>Senior High School</h3>
-                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"rgba(255,255,255,.42)",marginBottom:14 }}>Grades 10 – 12</div>
-                  <p style={{ fontSize:".84rem",lineHeight:1.82,color:"rgba(255,255,255,.66)",maxWidth:400 }}>
-                    Intense preparation for WASSCE, university entrance, and career readiness. Students wear Blue and White — representing loyalty, clarity, and ambition.
+                  <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"1.95rem",color:"#160457",marginBottom:8 }}>Senior High School</h3>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"rgb(11, 1, 104)",marginBottom:14 }}>Class 10 – 12</div>
+                  <p style={{ fontSize:".84rem",lineHeight:1.82,color:"rgba(11, 1, 104)",maxWidth:400 }}>
+                    Intense preparation for WASSCE, university entrance, and career readiness. Students wear Blue and White representing loyalty, clarity, and ambition.
                   </p>
                 </div>
                 <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,flex:1,minWidth:220 }}>
-                  {["Mathematics","English Language","Biology","Chemistry","Physics","Computer Science"].map(s => (
-                    <div key={s} style={{ background:"rgba(255,255,255,.07)",borderRadius:7,padding:"9px 13px",fontSize:".78rem",color:"rgba(255,255,255,.78)",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:7 }}>
-                      <ChevronRight size={11} color="rgba(255,255,255,.3)"/> {s}
+                  {["Mathematics","English Language","Biology","Chemistry","Physics","Computer Science" ].map(s => (
+                    <div key={s} style={{ background:"rgba(11, 1, 104)",borderRadius:7,padding:"9px 13px",fontSize:".78rem",color:"rgb(255, 255, 255)",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:7 }}>
+                      <ChevronRight size={11} color="rgb(255, 255, 255)"/> {s}
                     </div>
                   ))}
                 </div>
@@ -597,7 +725,7 @@ export default function JLMSite() {
           </div>
 
           {/* ─ Junior High: Gold & Blue ─ */}
-          <div className="lvl-card reveal d2" style={{ background:"linear-gradient(145deg,#6a4f00,#a88020)" }}>
+          <div className="lvl-card reveal d2" style={{ background:"linear-gradient(145deg,var(--navy),var(--navy-mid))", marginBottom:20 }}>
             <div style={{ padding:"38px 40px" }}>
               <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:28 }}>
                 <div style={{ flex:1,minWidth:240 }}>
@@ -609,7 +737,7 @@ export default function JLMSite() {
                     <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".62rem",fontWeight:700,letterSpacing:".15em",textTransform:"uppercase",color:"rgba(255,255,255,.68)" }}>School Colors: Gold & Blue</span>
                   </div>
                   <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"1.95rem",color:"#fff",marginBottom:8 }}>Junior High & Elementary</h3>
-                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"rgba(255,255,255,.48)",marginBottom:14 }}>Grades 7 – 9</div>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"rgba(255,255,255,.48)",marginBottom:14 }}>Class 7 – 9</div>
                   <p style={{ fontSize:".84rem",lineHeight:1.82,color:"rgba(255,255,255,.68)",maxWidth:400 }}>
                     Building foundational skills, values, and curiosity that will carry students forward. Gold and Blue represent achievement, excellence, and Liberian pride.
                   </p>
@@ -624,7 +752,44 @@ export default function JLMSite() {
               </div>
             </div>
           </div>
-        </div>
+        </div> 
+
+          {/* ─ Elementary & Kindergarten: Gold & Blue ─ */}
+          <div className="lvl-card reveal d3" 
+              style={{ background:"linear-gradient(145deg,#6a4f00,#a88020)", marginBottom:20 }}>
+            <div style={{ padding:"38px 40px" }}>
+              <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:28 }}>
+                <div style={{ flex:1,minWidth:240 }}>
+                  {/* Color chips */}
+                  <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:100,padding:"4px 14px",marginBottom:18 }}>
+                    <div style={{ display:"flex",gap:5 }}>
+                      <div style={{ width:11,height:11,borderRadius:"50%",background:"#ffd700",border:"2px solid rgba(255,255,255,.5)" }}/>
+                      <div style={{ width:11,height:11,borderRadius:"50%",background:"#003366",border:"2px solid rgba(255,255,255,.4)" }}/>
+                    </div>
+                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".62rem",fontWeight:700,letterSpacing:".15em",textTransform:"uppercase",color:"rgba(255,255,255,.7)" }}>
+                      School Colors: Gold & Blue
+                    </span>
+                  </div>
+                  <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"1.95rem",color:"#fff",marginBottom:8 }}>
+                    Elementary & Kindergarten
+                  </h3>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"rgb(255, 255, 255)",marginBottom:14 }}>
+                    Class K1 – 6
+                  </div>
+                  <p style={{ fontSize:".84rem",lineHeight:1.82,color:"rgba(255,255,255,.75)",maxWidth:400 }}>
+                    Early childhood and elementary education focused on play, creativity, and foundational literacy. Gold and Blue symbolize achievement, excellence, and bright beginnings.
+                  </p>
+                </div>
+                <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,flex:1,minWidth:220 }}>
+                  {["Phonics & Reading","Basic Mathematics","Storytelling","Art & Craft","Music & Dance","Physical Education"].map(s => (
+                    <div key={s} style={{ background:"rgba(255,255,255,.12)",borderRadius:7,padding:"9px 13px",fontSize:".78rem",color:"rgba(255,255,255,.85)",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:7 }}>
+                      <ChevronRight size={11} color="rgba(255,255,255,.4)"/> {s}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
       </section>
 
       {/* ── News ── */}
@@ -672,68 +837,262 @@ export default function JLMSite() {
             <h2 className="sec-title w reveal d1">A Glimpse of Our World</h2>
           </div>
           <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12 }}>
-            {GALLERY_ITEMS.map(({l,bg,h},i) => (
-              <div key={i} className={`g-item reveal d${(i%4)+1}`} style={{ height:h }}>
-                <div style={{ background:bg,height:"100%",display:"flex",alignItems:"center",justifyContent:"center",transition:"transform .5s" }}>
-                  <Trophy size={26} color="rgba(255,255,255,.12)"/>
-                </div>
+            {GALLERY_ITEMS.map(({l,img,h},i) => (
+              <div key={i} className={`g-item reveal d${(i%4)+1}`} style={{ height:h, cursor:"zoom-in" }}
+                onClick={() => setLightbox({ img, l })}>
+                <div style={{
+                  height:"100%",
+                  backgroundImage:`url(${img})`,
+                  backgroundSize:"cover",
+                  backgroundPosition:"center",
+                  transition:"transform .5s",
+                }}/>
                 <div className="g-lbl">{l}</div>
               </div>
             ))}
           </div>
           <p style={{ textAlign:"center",marginTop:26,fontFamily:"'Barlow',sans-serif",fontStyle:"italic",fontSize:".78rem",color:"rgba(255,255,255,.28)" }}>
-            Gallery placeholders — replace with real school photos
+            Click any image to enlarge · Gallery — JLM Memorial School
           </p>
         </div>
-      </section>
 
-      {/* ── Contact ── */}
-      <section id="contact" style={{ padding:"92px 5vw",background:"#fff" }}>
-        <div style={{ maxWidth:1100,margin:"0 auto" }}>
-          <div className="contact-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:56,alignItems:"start" }}>
-            <div className="reveal">
-              <div className="eyebrow" style={{ marginBottom:14 }}>Get In Touch</div>
-              <h2 className="sec-title" style={{ marginBottom:14,fontSize:"clamp(1.7rem,3vw,2.5rem)" }}>We'd Love to Hear From You</h2>
-              <div className="rule" style={{ marginBottom:24 }}/>
-              <p style={{ lineHeight:1.9,color:"var(--muted)",marginBottom:32,fontSize:".9rem" }}>
-                Whether you're a prospective student, a parent, an alumnus, or a partner — the JLM family is always open to you.
-              </p>
-              {[
-                { icon:MapPin, l:"Address", v:"Sinkor, Monrovia, Liberia" },
-                { icon:Phone,  l:"Phone",   v:"+231 (0) XXX-XXXX" },
-                { icon:Mail,   l:"Email",   v:"info@jlmmemorial.edu.lr" },
-              ].map(({ icon:Icon,l,v }) => (
-                <div key={l} style={{ display:"flex",gap:14,marginBottom:18,alignItems:"flex-start" }}>
-                  <div style={{ width:38,height:38,borderRadius:8,background:"var(--navy)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
-                    <Icon size={15} color="var(--gold)"/>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif",fontSize:".6rem",fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"var(--muted)",marginBottom:2 }}>{l}</div>
-                    <div style={{ fontFamily:"'Barlow',sans-serif",color:"var(--charcoal)",fontSize:".88rem" }}>{v}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="reveal d2" style={{ background:"var(--off-white)",borderRadius:12,padding:32,border:"1px solid var(--border)" }}>
-              <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"1.25rem",color:"var(--navy)",marginBottom:22 }}>Send a Message</h3>
-              {[{l:"Full Name",p:"Your full name",t:"text"},{l:"Email Address",p:"your@email.com",t:"email"},{l:"Subject",p:"How can we help?",t:"text"}].map(({l,p,t}) => (
-                <div key={l} style={{ marginBottom:14 }}>
-                  <label className="f-lbl">{l}</label>
-                  <input className="f-input" type={t} placeholder={p}/>
-                </div>
-              ))}
-              <div style={{ marginBottom:20 }}>
-                <label className="f-lbl">Message</label>
-                <textarea className="f-input" placeholder="Write your message…" rows={4} style={{ resize:"vertical" }}/>
-              </div>
-              <button className="btn-navy" style={{ width:"100%",justifyContent:"center" }}>
-                Send Message <ArrowRight size={15}/>
-              </button>
-            </div>
+        {/* ── Lightbox ── */}
+        {lightbox && (
+          <div onClick={() => setLightbox(null)} style={{
+            position:"fixed", inset:0, zIndex:1000,
+            background:"rgba(0,0,0,.92)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            flexDirection:"column", gap:16,
+            cursor:"zoom-out",
+            animation:"fadeIn .25s ease",
+          }}>
+            <img src={lightbox.img} alt={lightbox.l} style={{
+              maxWidth:"90vw", maxHeight:"80vh",
+              borderRadius:10,
+              boxShadow:"0 24px 80px rgba(0,0,0,.6)",
+              border:"2px solid rgba(200,160,42,.3)",
+              objectFit:"contain",
+            }}/>
+            <div style={{
+              fontFamily:"'Cormorant Garamond',serif",
+              fontSize:"1.05rem", color:"rgba(255,255,255,.75)",
+              letterSpacing:".06em",
+            }}>{lightbox.l}</div>
+            <div style={{
+              fontFamily:"'Barlow Condensed',sans-serif",
+              fontSize:".62rem", fontWeight:700, letterSpacing:".18em",
+              textTransform:"uppercase", color:"rgba(255,255,255,.28)",
+            }}>Click anywhere to close</div>
           </div>
-        </div>
+        )}
       </section>
+  
+    
+        {/* ── Contact Section ── */}
+        <section id="contact" style={{ padding: "92px 5vw", background: "#fff" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            
+            {/* Main Grid: Text & Info (Left) + Form (Right) */}
+            <div
+              className="contact-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                gap: 56,
+                alignItems: "start"
+              }}
+            >
+              
+              {/* LEFT SIDE: Heading & Info */}
+              <div className="reveal">
+                <div className="eyebrow" style={{ marginBottom: 14 }}>Get In Touch</div>
+                <h2
+                  className="sec-title"
+                  style={{ marginBottom: 14, fontSize: "clamp(1.7rem,3vw,2.5rem)" }}
+                >
+                  We'd Love to Hear From You
+                </h2>
+                <div className="rule" style={{ marginBottom: 24 }} />
+                <p
+                  style={{
+                    lineHeight: 1.9,
+                    color: "var(--muted)",
+                    marginBottom: 32,
+                    fontSize: ".9rem"
+                  }}
+                >
+                  Whether you're a prospective student, a parent, an alumnus, or a partner, the JLM family is always open to you.
+                </p>
+
+                {/* Address & Map Container */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  {/* Address Card */}
+                  <div
+                    style={{
+                      background: "#f9f9f9",
+                      borderRadius: "12px",
+                      padding: "24px",
+                      borderLeft: "4px solid #3498db",
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.05)"
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: "1.2rem",
+                        fontWeight: "600",
+                        color: "#2c3e50",
+                        marginBottom: "8px"
+                      }}
+                    >
+                      Our Location
+                    </h3>
+                    <p style={{ margin: 0, color: "#000000", lineHeight: 1.6 }}>
+                      Weaver Avenue Street, Paynesville City<br />
+                      Montserrado County<br />
+                      Liberia
+                    </p>
+                  </div>
+
+                  {/* Map Preview */}
+                  <div style={{ width: "100%", overflow: "hidden", borderRadius: "12px" }}>
+                    <iframe
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d603.8749456180014!2d-10.695255144889213!3d6.274608792489799!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xf0a01931a88e09f%3A0x7bfe8ddecd5fb00d!2sJohn%20Lewis%20Morris%20Memorial%20United%20Methodist%20School!5e1!3m2!1sen!2sin!4v1775067152122!5m2!1sen!2sin"
+                      width="100%"
+                      height="250"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      title="Location map of Paynesville, Liberia"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT SIDE: Contact Form */}
+              <div
+                className="reveal d2"
+                style={{
+                  background: "var(--off-white)",
+                  borderRadius: 12,
+                  padding: 32,
+                  border: "1px solid var(--border)"
+                }}
+              >
+                <h3
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontWeight: 700,
+                    fontSize: "1.5rem",
+                    color: "var(--navy)",
+                    marginBottom: 22
+                  }}
+                >
+                  Send a Message
+                </h3>
+
+                <form onSubmit={sendEmail}>
+                  <div style={{ marginBottom: 14 }}>
+                    <label className="f-lbl" htmlFor="user_name">Full Name</label>
+                    <input
+                      className="f-input"
+                      type="text"
+                      id="user_name"
+                      name="user_name"
+                      placeholder="Your full name"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 14 }}>
+                    <label className="f-lbl" htmlFor="user_email">Email Address</label>
+                    <input
+                      className="f-input"
+                      type="email"
+                      id="user_email"
+                      name="user_email"
+                      placeholder="Your email address"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 14 }}>
+                    <label className="f-lbl" htmlFor="subject">Subject</label>
+                    <input
+                      className="f-input"
+                      type="text"
+                      id="subject"
+                      name="subject"
+                      placeholder="How can we help you?"
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 20 }}>
+                    <label className="f-lbl" htmlFor="message">Message</label>
+                    <textarea
+                      className="f-input"
+                      id="message"
+                      name="message"
+                      placeholder="Write your message…"
+                      rows={4}
+                      style={{ resize: "vertical" }}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    className="btn-navy"
+                    type="submit"
+                    style={{
+                      width: "100%",
+                      justifyContent: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px"
+                    }}
+                    disabled={status === "loading"}
+                  >
+                    {status === "loading" ? "Sending..." : "Send Message"} <ArrowRight size={15} />
+                  </button>
+                </form>
+
+                {/* Status Feedback */}
+                {status === "success" && (
+                  <p style={{ color: "green", marginTop: 12 }}>
+                    Message sent successfully! We'll be in touch soon.
+                  </p>
+                )}
+                {status === "error" && (
+                  <p style={{ color: "red", marginTop: 12 }}>
+                    Failed to send message. Please try again later.
+                  </p>
+                )}
+              </div>
+            </div>
+            <a
+              href="https://wa.me/231775912197"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                position: "fixed",
+                bottom: "20px",
+                right: "20px",
+                backgroundColor: "#25D366",
+                color: "#fff",
+                borderRadius: "50%",
+                width: "60px",
+                height: "60px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "28px",
+                textDecoration: "none",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+                zIndex: 1000
+              }}
+            >
+              <FaWhatsapp />
+            </a>
+          </div>
+        </section>
 
       {/* ── Footer ── */}
       <footer className="footer" style={{ padding:"52px 5vw 26px" }}>
@@ -742,18 +1101,18 @@ export default function JLMSite() {
             <div>
               <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:14 }}>
                 <div style={{ width:34,height:34,borderRadius:"50%",background:"linear-gradient(135deg,var(--gold),#a88020)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                  <GraduationCap size={16} color="var(--navy)"/>
+                  <img src="\logo/logo.png" alt="School Logo" style={{ width:"200%", height:"100%", objectFit:"cover", borderRadius:"70%" }}/>
                 </div>
-                <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:".85rem",color:"#fff" }}>JLM Memorial HS</span>
+                <span style={{ fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:".85rem",color:"#fff" }}>JLM Memorial UMS</span>
               </div>
-              <p style={{ fontSize:".78rem",lineHeight:1.82,color:"rgba(255,255,255,.42)",maxWidth:260 }}>
+              <p style={{ fontSize:".78rem",lineHeight:1.82,color:"rgba(255, 255, 255, 0.97)",maxWidth:260 }}>
                 United in faith. United in excellence. Educating Liberia's next generation since 1946.
               </p>
               <div style={{ marginTop:16,display:"flex",gap:8 }}>
                 {["f","t","in","yt"].map(s => (
                   <div key={s} style={{ width:28,height:28,background:"rgba(255,255,255,.07)",borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:".65rem",fontWeight:700,color:"rgba(255,255,255,.46)",transition:"background .2s" }}
-                    onMouseEnter={e => e.currentTarget.style.background="rgba(200,160,42,.2)"}
-                    onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,.07)"}>
+                    onMouseEnter={e => e.currentTarget.style.background="rgba(250, 248, 248, 0.41)"}
+                    onMouseLeave={e => e.currentTarget.style.background="rgba(255, 255, 255, 0.28)"}>
                     {s}
                   </div>
                 ))}
@@ -765,27 +1124,28 @@ export default function JLMSite() {
             </div>
             <div>
               <div className="ft">Programs</div>
-              {["Senior High (10–12)","Junior High (7–9)","Sciences","Government","Arts","Sports"].map(l => <a key={l} href="#" className="fl">{l}</a>)}
+              {["Senior High (10–12)","Junior High (7–9)", "Elementary (KI-6)","Sciences","Commerce","Arts","Sports"].map(l => <a key={l} href="#" className="fl">{l}</a>)}
             </div>
             <div>
               <div className="ft">Contact</div>
-              <div style={{ fontSize:".78rem",color:"rgba(255,255,255,.46)",lineHeight:2.1 }}>
-                <div>📍 Weaver Avenue Street Paynesville City<br/> Montserrado County, Liberia</div>
-                <div>📞 +231 (0) XXX-XXXX</div>
-                <div>✉️ info@jlmmemorial.edu.lr</div>
+              <div style={{ fontSize:".78rem",color:"rgba(255, 255, 255, 0.87)",lineHeight:2.1 }}>
+                <div>📍 Weaver Avenue Street, Paynesville City, Montserrado County, Liberia</div>
+                <div>📞 +231 775 912 197</div>
+                <div>✉️ johnlewismorrismemorialums@gmail.com</div>
               </div>
             </div>
           </div>
-          <div style={{ borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:20,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10 }}>
-            <div style={{ fontSize:".73rem",color:"rgb(255, 255, 255)",fontFamily:"'Barlow',sans-serif" }}>
-              © {new Date().getFullYear()} John Lewis Morris Memorial UMS · All rights reserved
+          <div style={{ borderTop:"1px solid rgba(255, 255, 255, 0.79)",paddingTop:20,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10 }}>
+            <div style={{ fontSize:".73rem",color:"rgba(255, 255, 255, 0.72)",fontFamily:"'Barlow',sans-serif" }}>
+              © {new Date().getFullYear()} John Lewis Morris Memorial United Methodist School · All rights reserved
             </div>
-            <div style={{ fontSize:".7rem",color:"rgba(207, 197, 197, 0.53)",fontFamily:"'Barlow',sans-serif",fontStyle:"italic" }}>
-              Designed & Developed by Samuel B. Gaye
+            <div style={{ fontSize:".7rem",color:"rgba(255, 255, 255, 0.4)",fontFamily:"'Barlow',sans-serif",fontStyle:"italic" }}>
+              Designed with ♥ by a proud JLM alumnus Samuel B. Gaye
             </div>
           </div>
         </div>
       </footer>
-    </div>
+    </div> 
   );
-}
+};
+

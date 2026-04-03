@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import emailjs from "@emailjs/browser";
 import {
   ArrowLeft, ArrowRight, User, Users, School,
@@ -113,42 +114,58 @@ export default function Admissions() {
   const next = () => setStep(s => Math.min(s + 1, 4));
   const back = () => setStep(s => Math.max(s - 1, 1));
 
+  const submitting = useRef(false);
+
   const submit = e => {
     e.preventDefault();
+
+    // Block double submit
+    if (submitting.current) return;
+    submitting.current = true;
+
     setLoading(true);
     emailjs.send("service_4mkotvj", "template_vazlyma", {
-        user_name:  form.parent_name,
-        user_email: form.parent_email,
-        subject:    `Admission Application — ${form.student_name} — ${form.grade_applying}`,
-        message:
-    `STUDENT INFORMATION
-    ───────────────────
-    Full Name:          ${form.student_name}
-    Date of Birth:      ${form.student_dob}
-    Gender:             ${form.student_gender}
-    Nationality:        ${form.student_nationality}
-    Grade Applying For: ${form.grade_applying}
+      user_name:  form.parent_name || form.student_name,
+      user_email: form.parent_email || "noreply@jlmmemorial.edu.lr",
+      subject:    `NEW ADMISSION APPLICATION — ${form.student_name} — ${form.grade_applying}`,
+      message:
+  `STUDENT INFORMATION
+  ───────────────────
+  Full Name:          ${form.student_name}
+  Date of Birth:      ${form.student_dob}
+  Gender:             ${form.student_gender}
+  Nationality:        ${form.student_nationality}
+  Grade Applying For: ${form.grade_applying}
 
-    PARENT / GUARDIAN
-    ───────────────────
-    Name:               ${form.parent_name}
-    Relationship:       ${form.parent_relationship}
-    Phone:              ${form.parent_phone}
-    Email:              ${form.parent_email}
+  PARENT / GUARDIAN
+  ───────────────────
+  Name:               ${form.parent_name}
+  Relationship:       ${form.parent_relationship}
+  Phone:              ${form.parent_phone}
+  Email:              ${form.parent_email || "Not provided"}
 
-    SCHOOL HISTORY
-    ───────────────────
-    Previous School:    ${form.prev_school}
-    Last Grade:         ${form.last_grade_completed}
-    Reason for Leaving: ${form.reason_leaving}
+  SCHOOL HISTORY
+  ───────────────────
+  Previous School:    ${form.prev_school}
+  Last Grade:         ${form.last_grade_completed}
+  Reason for Leaving: ${form.reason_leaving || "Not provided"}
 
-    ADDITIONAL INFO
-    ───────────────────
-    ${form.additional_info || "None provided"}`
+  ADDITIONAL INFO
+  ───────────────────
+  ${form.additional_info || "None provided"}`
     }, "I7qLc7gVyKx1hh22j")
-    .then(() => { setLoading(false); setSubmitted(true); })
-    .catch(err => { setLoading(false); console.error(err); alert("Submission failed. Please try again."); });
-    };
+    .then(() => { 
+      setLoading(false); 
+      setSubmitted(true);
+      submitting.current = false;
+    })
+    .catch(err => { 
+      setLoading(false);
+      submitting.current = false;
+      console.error(err); 
+      alert("Submission failed. Please try again."); 
+    });
+  };
 
 
   /* ── Success Screen ── */

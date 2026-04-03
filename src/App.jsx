@@ -522,12 +522,9 @@ export default function JLMSite() {
                 John Lewis<br/> Morris Memorial <span className="shimmer-gold"><span></span><br/>United Methodist School</span><br/>
               </h1>
 
-              <p style={{ fontFamily:"'Barlow',sans-serif",fontSize:"clamp(.92rem,1.5vw,1.08rem)",color:"rgba(255,255,255,.62)",lineHeight:1.78,maxWidth:450,marginBottom:16,fontStyle:"italic",animation:"fadeUp 1s .4s ease both" }}>
-                "Educating minds, shaping futures, building a stronger Liberia, one student at a time."
-              </p>
               <div style={{ display:"inline-flex",alignItems:"center",gap:8,marginBottom:34,animation:"fadeUp 1s .45s ease both" }}>
                 <div style={{ width:26,height:1.5,background:"var(--gold)" }}/>
-                <span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1rem",fontStyle:"italic",color:"var(--gold-light)",letterSpacing:".04em" }}>
+                <span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1rem",fontStyle:"italic",color:"var(--gold-light)",letterSpacing:".04em",fontWeight: 700 }}>
                   "Perseverance is the key to Success."
                 </span>
                 <div style={{ width:26,height:1.5,background:"var(--gold)" }}/>
